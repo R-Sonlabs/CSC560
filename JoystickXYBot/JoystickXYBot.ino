@@ -1,4 +1,9 @@
 #include <Servo.h>;
+#include <Wire.h>;
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,20,4);
+
 int JoyStick_X_A = A0;
 int JoyStick_Y_A = A1;
 int JoyStick_Z_A = 4;
@@ -14,6 +19,11 @@ int delay2 = 50;
 Servo servo_x, servo_y;
 void setup ()
 {
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(2,5);
+  lcd.print("Power On!");
+  
   servo_x.attach(x_servo_pin, 1000, 2000);
   servo_y.attach(y_servo_pin, 1000, 2000);
   pinMode (JoyStick_X_A, INPUT);
@@ -23,6 +33,8 @@ void setup ()
   Serial.begin (9600);
   x_filtered_A = analogRead(JoyStick_X_A);
   y_filtered_A = analogRead(JoyStick_Y_A);
+  delay(1000);
+  lcd.clear();
 }
 void loop ()
 {
@@ -36,6 +48,14 @@ void loop ()
   Serial.print(y_pwm);
   Serial.print(", ");
   Serial.println(z_A);
+  lcd.print("X:");
+  lcd.print(x_filtered_A);
+  lcd.print(", ");
+  lcd.print("Y:");
+  lcd.print(y_filtered_A);
+  lcd.print(", ");
+  lcd.println(z_A);
+  lcd.clear();
   servo_x.write(x_pwm);
   servo_y.write(y_pwm);
   if(z_A == 0) {digitalWrite(Laser, HIGH);} else {digitalWrite(Laser, LOW);}

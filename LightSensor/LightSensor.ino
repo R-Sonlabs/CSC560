@@ -1,6 +1,6 @@
 #include <LightSensor.h>
 
-LightSensor input(A2,0,400);
+LightSensor input(A2,0,700);
 
 void setup() {
   Serial.begin(9600);

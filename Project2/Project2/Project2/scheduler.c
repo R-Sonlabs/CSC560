@@ -10,7 +10,7 @@
  *      Based on code by Jacob Schwartz
  */
 #include "scheduler.h"
-
+#include <math.h>
 //#include "arduino/Arduino.h"
 #include <avr/interrupt.h>
 #define NULL 0
@@ -77,7 +77,7 @@ uint32_t Scheduler_Dispatch()
       }
       else
       {
-        idle_time = min((uint32_t)tasks[i].remaining_time, idle_time);
+        idle_time = fmin((uint32_t)tasks[i].remaining_time, idle_time);
       }
     }
   }

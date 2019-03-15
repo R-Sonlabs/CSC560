@@ -10,7 +10,10 @@
  *      Based on code by Jacob Schwartz
  */
 #include "scheduler.h"
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6cfe086a6f99b0b92cba2c16e83cb4ea213adbe9
 #include <math.h>
 //#include "arduino/Arduino.h"
 #include <avr/interrupt.h>

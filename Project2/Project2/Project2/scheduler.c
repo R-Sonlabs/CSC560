@@ -15,6 +15,8 @@
 #include <avr/interrupt.h>
 #define NULL 0
 
+volatile unsigned long ms;
+
 typedef struct
 {
   int32_t period;
@@ -29,7 +31,7 @@ uint32_t last_runtime;
  
 void Scheduler_Init()
 {
-  last_runtime = millis();
+  last_runtime = ms;
 }
  
 void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task)
@@ -49,7 +51,7 @@ uint32_t Scheduler_Dispatch()
 {
   uint8_t i;
  
-  uint32_t now = millis();
+  uint32_t now = ms;
   uint32_t elapsed = now - last_runtime;
   last_runtime = now;
   task_cb t = NULL;
@@ -85,4 +87,18 @@ uint32_t Scheduler_Dispatch()
     t();
   }
   return idle_time;
+}
+
+ISR(TIMER0_COMPA_vect)
+{
+	TCNT0 = 0xF0;
+
+	ms++;
+}
+
+void Timer0_Init(void)
+{
+	TCCR0A = 0x07; 
+	TCNT0 = 0xF0; 
+	TIMSK0 = 0x01; 
 }

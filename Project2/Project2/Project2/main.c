@@ -32,10 +32,13 @@
 //#include "arduino/Arduino.h"
 #include "scheduler.h"
 #include <string.h>
+#include <stdio.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/sfr_defs.h>
+//#include <util/delay.h>
+#define TICKS_PER_SECOND 16000000L
 
 //Port D (digital pins 0 to 7)
 //uint8_t pulse1_pin = 3;
@@ -75,23 +78,22 @@ void delay(uint32_t ms)
   }
 }
 
-// task function for PulsePin task
-void ping()
+// task function for PulsePin 3 task
+void pulse_pin1_task()
 {
-  //set digital pin 3, 4 to high
+  //set digital pin 3 high, and then low
   PORTD |= (1 << PD3);
-  PORTD |= (1 << PD4);
-
+  PORTD &= ~(1 << PD3);
 }
  
-// task function for PulsePin task
-void pong()
+// task function for PulsePin 4 task
+void pulse_pin2_task()
 {
-  //set digital pin 3, 4 to low
-  PORTD &= ~(1 << PD3);
+  //set digital pin 4 high, and then 4 low
+  PORTD |= (1 << PD4);
   PORTD &= ~(1 << PD4);
 }
- 
+
 // idle task
 void idle(uint32_t idle_period)
 {
@@ -107,17 +109,15 @@ void idle(uint32_t idle_period)
  
 void setup()
 {
-  // pinMode(pulse1_pin, OUTPUT);
-  // pinMode(pulse2_pin, OUTPUT);
-  // pinMode(idle_pin, OUTPUT);
   DDRD |= (1 << PD3) | (1 << PD4) | (1 << PD7);
+  
   Scheduler_Init();
  
   // Start task arguments are:
-  //    start offset in ms, period in ms, function callback
- 
-  Scheduler_StartTask(0, 500, ping);
-  Scheduler_StartTask(0, 300, pong);
+  // start offset in ms, period in ms, function callback
+	Scheduler_StartTask(0, 500, pulse_pin1_task);
+	Scheduler_StartTask(0, 300, pulse_pin2_task);
+	
 }
  
 void loop()
@@ -125,16 +125,13 @@ void loop()
   uint32_t idle_period = Scheduler_Dispatch();
   if (idle_period)
   {
-    idle(idle_period);
+	idle(idle_period);
   }
 }
  
 int main()
 {
-
-  //init();
   setup();
- 
   for (;;)
   {
     loop();

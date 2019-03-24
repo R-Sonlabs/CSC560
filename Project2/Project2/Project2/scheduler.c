@@ -16,7 +16,7 @@
 #define NULL 0
 
 volatile unsigned long ms;
-
+//volatile unsigned long system_timer = 0;
 typedef struct
 {
   int32_t period;
@@ -24,11 +24,22 @@ typedef struct
   uint8_t is_running;
   task_cb callback;
 } task_t;
- 
+
+typedef struct
+{
+	int32_t period;
+	int32_t remaining_time;
+	uint8_t is_running;
+	task_cb callback;
+	int priority;
+	int32_t run_time;
+	
+} oneshot_t;
+
 task_t tasks[MAXTASKS];
  
 uint32_t last_runtime;
- 
+
 void Scheduler_Init()
 {
   last_runtime = ms;
@@ -89,16 +100,15 @@ uint32_t Scheduler_Dispatch()
   return idle_time;
 }
 
-ISR(TIMER0_COMPA_vect)
-{
-	TCNT0 = 0xF0;
-
+ISR(TIMER1_COMPA_vect) {
 	ms++;
 }
 
-void Timer0_Init(void)
-{
-	TCCR0A = 0x07; 
-	TCNT0 = 0xF0; 
-	TIMSK0 = 0x01; 
-}
+
+//
+//void Timer0_Init(void)
+//{
+	//TCCR0A = 0x07;
+	//TCNT0 = 0xF0;
+	//TIMSK0 = 0x01;
+//}

@@ -13,7 +13,7 @@
 #define SCHEDULER_H_
  
 #include <avr/io.h>
- 
+
 ///Up to this many tasks can be run, in addition to the idle task
 #define MAXTASKS  8
  
@@ -44,5 +44,68 @@ void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task);
  * function called as often as possible, plus any low-priority code that you want to run sporadically.
  */
 uint32_t Scheduler_Dispatch();
- 
+
+
+/************************************************************************/
+/* Linked List Structure
+ * Use template type to make a generic function LinkedList                                                                    */
+/************************************************************************/
+struct node
+{
+	t val;
+	node* next;
+	node* prev;
+	node(int v_) : val(v_), next(NULL) {};
+};
+
+template <class t> 
+class LinkedList
+{
+	private:		
+		node* head;
+		node* tail;
+		int size;
+	
+	public:
+		//Constructor
+		linkedlist ()
+		{
+			head = NULL;
+			tail = NULL;
+			size = 0;
+		}
+		t* front()
+		{
+			return head->val;
+		}
+
+		void addFront(t v_)
+		{
+			struct node* temp = (struct node*) malloc(sizeof(struct node)); 
+			temp->val = v_;
+			temp->next = head;
+			head = temp;
+			
+		}
+		void removeFront()
+		{
+			//struct Node* temp = *head_ref, *prev;
+			node* temp = head;
+			head = head->next;		
+			free(temp);  // Free memory		
+		}
+		
+		bool isEmpty()
+		{
+			return size == 0;
+			
+		}
+		int length()
+		{
+			return size;
+		}
+		// Destructor
+		~linkedlist();
+};
+
 #endif /* SCHEDULER_H_ */

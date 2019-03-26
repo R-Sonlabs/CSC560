@@ -104,8 +104,8 @@ void setup()
 	
 	// Start task arguments are:
 	// start offset in ms, period in ms, function callback
-	Scheduler_StartTask(0, 500, pulse_pin1_task);
-	Scheduler_StartTask(0, 300, pulse_pin2_task);
+	//Scheduler_StartTask(0, 500, pulse_pin1_task);
+	//Scheduler_StartTask(0, 300, pulse_pin2_task);
 	
 }
 

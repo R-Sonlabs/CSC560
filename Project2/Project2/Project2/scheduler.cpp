@@ -1,7 +1,7 @@
 /*
- * scheduler.c
+ * scheduler.cpp
  *
- * Created: 3/13/2019 6:35:17 PM
+ * Created: 3/25/2019 11:35:29 PM
  *  Author: grace
  * scheduler.cpp
  *
@@ -9,7 +9,7 @@
  *      Author: nrqm
  *      Based on code by Jacob Schwartz
  */
-//#include "scheduler.h"
+#include "scheduler.h"
 #include <math.h>
 //#include "arduino/Arduino.h"
 #include <avr/interrupt.h>

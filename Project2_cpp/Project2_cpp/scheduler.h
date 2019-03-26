@@ -4,9 +4,6 @@
  * Created: 3/13/2019 6:35:35 PM
  *  Author: grace
  * scheduler.h
- *
- *  Created on: 17-Feb-2011
- *      Author: nrqm
  */
  
 #ifndef SCHEDULER_H_
@@ -57,11 +54,7 @@ uint32_t Scheduler_Dispatch();
 template <class t> 
 class LinkedList
 {
-	private:		
-		node* head;
-		node* tail;
-		int size;
-	
+
 	public:
 		//Constructor
 		LinkedList ()
@@ -112,6 +105,11 @@ class LinkedList
 		~LinkedList(){
 			
 		}
+		private:
+		node* head;
+		node* tail;
+		int size;
+			
 };
 
 

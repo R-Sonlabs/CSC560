@@ -32,9 +32,12 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/sfr_defs.h>
-//#include <util/delay.h>
 #define TICKS_PER_SECOND 16000000L
 volatile unsigned long system_timer = 0;
+
+#define Disable_Interrupt()		asm volatile ("cli"::)
+#define Enable_Interrupt()		asm volatile ("sei"::)
+
 
 // Get timer value
 unsigned long get_system_timer( void )
@@ -100,12 +103,31 @@ void setup()
 {
 	DDRD |= (1 << PD3) | (1 << PD4) | (1 << PD7);
 	
+	/*-----Apply Timer Interrupt------*/
+	Disable_Interrupt();
+	TCCR1A = 0; // set entire TCCR1A register to 0
+	TCCR1B = 0; // same for TCCR1B
+	TCNT1  = 0; // initialize counter value to 0
+	// set compare match register for 100 Hz increments
+	OCR1A = 16000000 / (8 * 1000);
+	// turn on CTC mode
+	TCCR1B |= (1 << WGM12);
+	// Set CS12, CS11 and CS10 bits for 8 prescaler
+	TCCR1B |= (0 << CS12) | (1 << CS11) | (0 << CS10);
+	// enable timer compare interrupt
+	TIMSK1 |= (1 << OCIE1A);
 	Scheduler_Init();
-	
+	Enable_Interrupt();
 	// Start task arguments are:
 	// start offset in ms, period in ms, function callback
 	//Scheduler_StartTask(0, 500, pulse_pin1_task);
 	//Scheduler_StartTask(0, 300, pulse_pin2_task);
+	
+	/* Add Test Case Here!
+	 * check time conflict between Non-time Critical task and Time Triggered task
+	 * two time based tasks collide repeatedly
+	 * too many one-shot tasks cause the time-based tasks to miss their deadlines
+	*/
 	
 }
 

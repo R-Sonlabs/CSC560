@@ -55,7 +55,7 @@ class LinkedList
 		
 		t* front()
 		{
-			return head->val;
+			return &(head->val);
 		}
 
 		void addFront(t v_)
@@ -118,6 +118,6 @@ typedef void (*task_cb)(LinkedList<task_arg>&);
 void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task);
 
 void Scheduler_StartTask_Oneshot(task_cb task_oneshot, LinkedList<task_arg> argument, int priority, int32_t run_time, int32_t remaining_time, int id);
-uint32_t Scheduler_Dispatch_Oneshot();
+void Scheduler_Dispatch_Oneshot();
 
 #endif /* SCHEDULER_H_ */

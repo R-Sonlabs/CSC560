@@ -37,8 +37,12 @@ typedef struct
 } oneshot_t;
 
 task_t tasks[MAXTASKS];
-LinkedList<oneshot_t> task_oneshot;
+LinkedList<oneshot_t> ntc_oneshot;  //non time critical one-shot tasks
+LinkedList<oneshot_t> tt_oneshot;   //time triggered one-shot tasks
 uint32_t last_runtime;
+uint32_t idle_start;
+uint32_t last_oneshot_time;
+int32_t remaining_idle_time;
 
 void Scheduler_Init()
 {
@@ -48,6 +52,11 @@ void Scheduler_Init()
 
 ISR(TIMER1_COMPA_vect) {
 	ms++;
+	/*  Errors check here!
+	 *  interrupt handler executing too long
+	 * timing jitter of time-based tasks caused by interrupt handler
+	 */
+
 }
 
 
@@ -110,6 +119,9 @@ uint32_t Scheduler_Dispatch()
     t(argument);
 	tasks[index].remaining_time = tasks[index].period;
   }
+  idle_start = ms;
+  last_oneshot_time = ms;
+  remaining_idle_time = idle_time;
   return idle_time;
 }
 
@@ -125,60 +137,55 @@ void Scheduler_StartTask_Oneshot(task_cb task_o, LinkedList<task_arg> argument, 
 		/* remaining_time, is_running, callback, priority, argument, run_time, int id */
 		oneshot_t ntc_tasks = {remaining_time, 0, task_o, priority, argument, run_time, nid};
 		nid++;
-		task_oneshot.addFront(ntc_tasks);
+		ntc_oneshot.addFront(ntc_tasks);
 	}
 	/* Time triggered tasks */
 	else
 	{
 		oneshot_t tt_tasks = {remaining_time, 0, task_o, priority, argument, run_time, tid};
 		tid++;
-		task_oneshot.addFront(tt_tasks);
+		tt_oneshot.addFront(tt_tasks);
 	}
 }
 
-uint32_t Scheduler_Dispatch_Oneshot()
+void Scheduler_Dispatch_Oneshot()
 {
-	uint8_t i;
+	// miss oneshot tasks check
+	
+	
 	uint32_t now = ms;
-	uint32_t elapsed = now - last_runtime;
-	last_runtime = now;
-	task_cb t = NULL;
-	uint32_t idle_time = 0xFFFFFFFF;
-	int index = -1;
-	LinkedList<task_arg> argument;
-	// update each task's remaining time, and identify the first ready task (if there is one).
-	for (i = 0; i < MAXTASKS; i++)
+	uint32_t elapsed = now - last_oneshot_time;
+	last_oneshot_time = now;
+	oneshot_t next_task;
+	remaining_idle_time -= elapsed;
+	if(!ntc_oneshot.isEmpty())
 	{
-		if (tasks[i].is_running)
+		while(ntc_oneshot.front()->run_time < remaining_idle_time)
 		{
-			// update the task's remaining time
-			tasks[i].remaining_time -= elapsed;
-			if (tasks[i].remaining_time <= 0)
+			next_task = *ntc_oneshot.front();
+			next_task.is_running = 1;
+			if(next_task.priority)
 			{
-				if (t == NULL)
-				{
-					// if this task is ready to run, and we haven't already selected a task to run,
-					// select this one.
-					index = i;
-					t = tasks[i].callback;
-					//tasks[i].remaining_time += tasks[i].period;
-					argument = tasks[i].argument;
-				}
-				idle_time = 0;
-			}
-			else
-			{
-				idle_time = fmin((uint32_t)tasks[i].remaining_time, idle_time);
+				ntc_oneshot.removeFront();
 			}
 		}
+		
 	}
-	if (t != NULL)
+	
+	if(!tt_oneshot.isEmpty())
 	{
-		// If a task was selected to run, call its function.
-		t(argument);
-		tasks[index].remaining_time = tasks[index].period;
+		while(tt_oneshot.front()->run_time < remaining_idle_time)
+		{
+			next_task = *tt_oneshot.front();
+			next_task.is_running = 1;
+			if(!next_task.priority)
+			{
+				tt_oneshot.removeFront();
+			}
+		}
+		
 	}
-	return idle_time;
+	
 }
 
 

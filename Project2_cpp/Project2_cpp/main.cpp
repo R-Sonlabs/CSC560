@@ -85,7 +85,7 @@ void pulse_pin6_task(LinkedList<task_arg> &arg1)
 {
 	//set digital pin 6
 	PORTD |= (1 << PD6);
-	delay(10);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
 	PORTD &= ~(1 << PD6);
 }
 
@@ -117,6 +117,30 @@ void periodic_task_2(LinkedList<task_arg> &arg1)
 	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 1, 10, 70);
 	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 10, 30);
 	PORTD &= ~(1 << PD4);
+}
+
+// Periodic Task 3
+void periodic_task_3(LinkedList<task_arg> &arg1)
+{
+	//set digital pin 3 high
+	PORTD |= (1 << PD3);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 10, 90);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 15, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 15, 90);
+	PORTD &= ~(1 << PD3);
+}
+
+// Periodic Task 4
+void periodic_task_4(LinkedList<task_arg> &arg1)
+{
+	//set digital pin 3 high
+	PORTD |= (1 << PD3);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 60, 90);
+	PORTD &= ~(1 << PD3);
 }
 
 
@@ -153,11 +177,6 @@ void setup()
 	TIMSK1 |= (1 << OCIE1A);
 	Scheduler_Init();
 	Enable_Interrupt();
-	// Start task arguments are:
-	// start offset in ms, period in ms, function callback
-	//Scheduler_StartTask(0, 500, pulse_pin1_task);
-	//Scheduler_StartTask(0, 300, pulse_pin2_task);
-	
 	/* Add Test Case Here!
 	 * check time conflict between Non-time Critical task and Time Triggered task
 	 * two time based tasks collide repeatedly
@@ -167,10 +186,21 @@ void setup()
 	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
 	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
 	
-	//Time conflict
+	//Time conflict between oneshot tasks and periodic task
 	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
 	Scheduler_StartTask(0, 300, pulse_pin7_task, arg1);
 	
+	// Two periodic tasks collide repeatedly
+	Scheduler_StartTask(0, 200, pulse_pin6_task, arg1);
+	Scheduler_StartTask(0, 300, pulse_pin7_task, arg1);
+	
+	//Too much oneshot tasks, miss deadline
+	Scheduler_StartTask(0, 200, periodic_task_3, arg1);
+	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
+	
+	//Interrupt handler executing too long, miss deadline
+	Scheduler_StartTask(0, 200, periodic_task_4, arg1);
+	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
 }
 
 void loop()

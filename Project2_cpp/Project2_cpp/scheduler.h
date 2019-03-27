@@ -115,9 +115,9 @@ typedef void (*task_cb)(LinkedList<task_arg>&);
  * \param period The task will repeat every "period" milliseconds.
  * \param task The callback function that the scheduler is to call.
  */
-void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task);
+void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task, LinkedList<task_arg> argument);
 
-void Scheduler_StartTask_Oneshot(task_cb task_oneshot, LinkedList<task_arg> argument, int priority, int32_t run_time, int32_t remaining_time, int id);
+void Scheduler_StartTask_Oneshot(task_cb task_oneshot, LinkedList<task_arg> argument, int priority, int32_t run_time, int32_t remaining_time);
 void Scheduler_Dispatch_Oneshot();
 
 #endif /* SCHEDULER_H_ */

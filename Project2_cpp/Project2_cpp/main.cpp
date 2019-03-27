@@ -37,7 +37,8 @@ volatile unsigned long system_timer = 0;
 
 #define Disable_Interrupt()		asm volatile ("cli"::)
 #define Enable_Interrupt()		asm volatile ("sei"::)
-
+LinkedList <task_arg> arg1;
+LinkedList <task_arg> arg2;
 
 // Get timer value
 unsigned long get_system_timer( void )
@@ -70,23 +71,56 @@ void delay(uint32_t ms)
 	}
 }
 
-// task function for PulsePin 3 task
-void pulse_pin1_task()
+// One shot task 1 (Pin 5)
+void pulse_pin5_task(LinkedList<task_arg> &arg1)
 {
-	//set digital pin 3 high, and then low
+	//set digital pin 5
+	PORTD |= (1 << PD5);
+	delay(10);
+	PORTD &= ~(1 << PD5);
+}
+
+// One shot task 2 (Pin 6)
+void pulse_pin6_task(LinkedList<task_arg> &arg1)
+{
+	//set digital pin 6
+	PORTD |= (1 << PD6);
+	delay(10);
+	PORTD &= ~(1 << PD6);
+}
+
+// task 2 (Pin 7)
+void pulse_pin7_task(LinkedList<task_arg> &arg1)
+{
+	//set digital pin 7
+	PORTD |= (1 << PD7);
+	delay(10);
+	PORTD &= ~(1 << PD7);
+}
+
+// Periodic Task 1
+void periodic_task_1(LinkedList<task_arg> &arg1)
+{
+	//set digital pin 3 high
 	PORTD |= (1 << PD3);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 1, 10, 90);
 	PORTD &= ~(1 << PD3);
 }
 
-// task function for PulsePin 4 task
-void pulse_pin2_task()
+// Periodic Task 2
+void periodic_task_2(LinkedList<task_arg> &arg1)
 {
 	//set digital pin 4 high, and then 4 low
 	PORTD |= (1 << PD4);
+	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 1, 10, 70);
+	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 10, 30);
 	PORTD &= ~(1 << PD4);
 }
 
-// idle task
+
+// idle task (Pin 2)
 void idle(uint32_t idle_period)
 {
 	// this function can perform some low-priority task while the scheduler has nothing to run.
@@ -94,14 +128,15 @@ void idle(uint32_t idle_period)
 	// could sleep or respond to I/O.
 	
 	// example idle function that just pulses a pin.
-	PORTD |= (1 << PD7);
+	PORTD |= (1 << PD2);
 	delay(idle_period);
-	PORTD &= ~(1 << PD7);
+	Scheduler_Dispatch_Oneshot();
+	PORTD &= ~(1 << PD2);
 }
 
 void setup()
 {
-	DDRD |= (1 << PD3) | (1 << PD4) | (1 << PD7);
+	DDRD |= (1 << PD2) | (1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7);
 	
 	/*-----Apply Timer Interrupt------*/
 	Disable_Interrupt();
@@ -128,6 +163,13 @@ void setup()
 	 * two time based tasks collide repeatedly
 	 * too many one-shot tasks cause the time-based tasks to miss their deadlines
 	*/
+	//Success
+	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
+	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
+	
+	//Time conflict
+	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
+	Scheduler_StartTask(0, 300, pulse_pin7_task, arg1);
 	
 }
 

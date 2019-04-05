@@ -231,16 +231,16 @@ void parseData() {
 }
 
 void showParsedData() {
-  Serial.print("X:");
-  Serial.print(xVal);
-  Serial.print(" Y:");
-  Serial.print(yVal);
-  Serial.print(" Z:");
-  Serial.print(trigger);
-  Serial.print(" V:");
-  Serial.print(velocity);
-  Serial.print(" R:");
-  Serial.println(radius);
+//   Serial.print("X:");
+//   Serial.print(xVal);
+//   Serial.print(" Y:");
+//   Serial.print(yVal);
+//   Serial.print(" Z:");
+//   Serial.print(trigger);
+//   Serial.print(" V:");
+//   Serial.print(velocity);
+//   Serial.print(" R:");
+//   Serial.println(radius);
   digitalWrite (btListenPin, digitalRead(btListenPin) ^ 1);
 }
 
@@ -270,40 +270,40 @@ void drive(int vel, int rad) {
 void servoing() {
   digitalWrite(servoingPin, digitalRead(servoingPin) ^ 1);
   servoX.write(xVal);
-  Serial.println(xVal);
+  //Serial.println(xVal);
   servoY.write(yVal);
   digitalWrite(servoingPin, digitalRead(servoingPin) ^ 1);
 }
 
 void lightSensor() {
-  digitalWrite(lightSensorPin, digitalRead(lightSensorPin) ^ 1);
-  photoVal = analogRead(photoSensor);
-  if (photoVal > photoThreshold) {
-    if (shot > 40) {
-      while (1) { //We're dead!!
-        noInterrupts();
-        playSound(2);
-      }
-      } else {
-      shotFlag = true;
-    }
-    } else {
-    shotFlag = false;
-  }
-  digitalWrite(lightSensorPin, digitalRead(lightSensorPin) ^ 1);
+//   digitalWrite(lightSensorPin, digitalRead(lightSensorPin) ^ 1);
+//   photoVal = analogRead(photoSensor);
+//   if (photoVal > photoThreshold) {
+//     if (shot > 40) {
+//       while (1) { //We're dead!!
+//         noInterrupts();
+//         playSound(2);
+//       }
+//       } else {
+//       shotFlag = true;
+//     }
+//     } else {
+//     shotFlag = false;
+//   }
+//   digitalWrite(lightSensorPin, digitalRead(lightSensorPin) ^ 1);
 }
 
 void river() {
-  digitalWrite(riverPin, digitalRead(riverPin) ^ 1);
-  Serial1.write(142);
-  Serial1.write(13);
-  while (Serial1.available() > 0) {
-    riverFlag = Serial1.read();
-  }
-  if(riverFlag){
-    escape();
-  }
-  digitalWrite(riverPin, digitalRead(riverPin) ^ 1);
+//   digitalWrite(riverPin, digitalRead(riverPin) ^ 1);
+//   Serial1.write(142);
+//   Serial1.write(13);
+//   while (Serial1.available() > 0) {
+//     riverFlag = Serial1.read();
+//   }
+//   if(riverFlag){
+//     escape();
+//   }
+//   digitalWrite(riverPin, digitalRead(riverPin) ^ 1);
 }
 
 void wakeUp (void)

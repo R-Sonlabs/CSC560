@@ -83,6 +83,7 @@ uint8_t Servo::attach(int pin, int min, int max){
 }
 
 void Servo::write(int val){
+	Serial.println("This is servo write function");
 	byte channel = this->servoIndex;
 	if( (channel >= 0) && (channel < MAX_SERVOS)){  
 		if( value < SERVO_MIN()){
@@ -92,6 +93,8 @@ void Servo::write(int val){
 		}
 		value = (value-5);
 		value = usToTicks(value);  // convert to ticks after compensating for interrupt overhead
+		Serial.println("S: ");
+		Serial.print(value);
 	    servos[channel].ticks = value;
 	}
 }

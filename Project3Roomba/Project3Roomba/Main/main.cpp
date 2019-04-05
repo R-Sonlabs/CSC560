@@ -3,7 +3,7 @@
   CSC560 - Project 3
   UVIC, Spring 2019
   
-  Matt Richardson & Grace Liu
+  Matt Richardson & Grace Li
   Team 9
 */
 
@@ -104,8 +104,8 @@ void setup() {
   pinMode(lightSensorPin, OUTPUT);
   pinMode(riverPin, OUTPUT);
   pinMode(laserPin, OUTPUT);
-  servoX.attach(xPin);
-  servoY.attach(yPin);
+  servoX.attach(xPin, 1500, 1600);
+  servoY.attach(yPin, 1500, 1600);
   wakeUp();  //Wake up our roomba bot
 
   //FunctionPointer testFunc = &test;  //GRACE: Declare each task this way
@@ -269,6 +269,7 @@ void drive(int vel, int rad) {
 
 void servoing() {
   digitalWrite(servoingPin, digitalRead(servoingPin) ^ 1);
+  Serial.println("This is servoing function");
   servoX.write(xVal);
   Serial.println(xVal);
   servoY.write(yVal);

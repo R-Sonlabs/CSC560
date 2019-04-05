@@ -20,11 +20,31 @@
 #ifndef server_h
 #define server_h
 
-#include "Print.h"
+#define MIN_PULSE_WIDTH       544     // the shortest pulse sent to a servo
+#define MAX_PULSE_WIDTH      2400     // the longest pulse sent to a servo
+#define DEFAULT_PULSE_WIDTH  1500     // default pulse width when servo is attached
+#define MAX_SERVOS           2
+#define SERVO_MIN() (MIN_PULSE_WIDTH - this->min * 4)  // minimum value in uS for this servo
+#define SERVO_MAX() (MAX_PULSE_WIDTH - this->max * 4)  // maximum value in uS for this servo
+#define usToTicks(_us)    ((clockCyclesPerMicrosecond() * _us) / 16)      // converts microseconds to tick
+#define ticksToUs(_ticks) (((unsigned) _ticks * 16) / clockCyclesPerMicrosecond())   // converts from ticks back to microseconds
 
-class Server : public Print {
-public:
-  virtual void begin() =0;
+typedef struct {
+	uint8_t Pin;
+	unsigned int ticks;
+} servo_t;
+
+class Servo{
+	public:
+	Servo();
+	uint8_t attach(int pin, int min, int max);
+	void write(int val);
+	int read();
+
+	private:
+	uint8_t servoIndex;               // index into the channel data for this servo, 0:x, 1:y
+	int8_t min;
+	int8_t max;
 };
 
 #endif

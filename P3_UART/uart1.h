@@ -6,8 +6,7 @@
 #include <inttypes.h>
 
 
-void usart1_init(int use_interrupt);
+void usart1_init(void);
 int8_t usart1_getchar(void);
 void usart1_putchar(int8_t c);
-char usart1_getstring(void);
 void usart1_putstring(char *str);

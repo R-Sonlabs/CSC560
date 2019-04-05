@@ -38,8 +38,7 @@ static servo_t servos[MAX_SERVOS];
 uint8_t servo_count = 0;
 
 /* Replace with your library code */
-void timer_init()
-{
+void timer_init(){
 	/*---------- Motor Initialization ----------
 	* xPin 7 (OC3C/INT5) = digital pin 3 = PE5
 	* yPin 5 (OC3A/AIN1) = digital pin 5 = PE3
@@ -83,8 +82,7 @@ uint8_t Servo::attach(int pin, int min, int max){
 	return this->servoIndex;
 }
 
-void Servo::write(int val)
-{  
+void Servo::write(int val){
 	byte channel = this->servoIndex;
 	if( (channel >= 0) && (channel < MAX_SERVOS)){  
 		if( value < SERVO_MIN()){
@@ -97,6 +95,7 @@ void Servo::write(int val)
 	    servos[channel].ticks = value;
 	}
 }
+
 int read(){
 	unsigned int pulsewidth;
   	if (this->servoIndex < MAX_SERVOS)

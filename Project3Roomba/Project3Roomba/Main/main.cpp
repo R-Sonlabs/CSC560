@@ -1,7 +1,14 @@
-﻿#include <Arduino.h>
+﻿/*
+	Roomba Controller
+	CSC560 - Project 3
+	UVIC, Spring 2019
+	
+	Matt Richardson & Grace Liu
+	Team 9
+*/
+
+#include <Arduino.h>
 #include <Servo.h>
-
-
 
 typedef void (*FunctionPointer)();
 
@@ -9,10 +16,11 @@ int queueMaker(FunctionPointer func, int offset);
 int test();
 void idler();
 void timerMaker();
+void clockT(int delayTime);
 void btListen();
 void parseData();
 void showParsedData();
-void driving();
+void drive(int vel, int rad);
 void servoing();
 void river();
 void wakeUp(void );
@@ -20,13 +28,17 @@ void stopDrive(void );
 void laser();
 void champions();
 void lightSensor();
+void startFull();
+void playSound(int num);
+void escape();
+void clockTest();
 ISR(TIMER0_COMPA_vect );
 ISR(TIMER5_OVF_vect );
 
 
 #define period 100  //GRACE: This is how frequently the timer fires off the next task
 #define testPin 52 //GRACE: just use this for when you need to test if a task is firing
-#define maxFuncs 6 //GRACE: increment this for every task you add
+#define maxFuncs 5 //GRACE: increment this for every task you add
 #define ddPin 12
 #define laserPin 9
 #define xPin 7
@@ -40,6 +52,7 @@ ISR(TIMER5_OVF_vect );
 
 FunctionPointer funcs[maxFuncs];
 
+int clockTimer = 0;  //Increments 50.33ms - Useful for generally timing stuff.
 int funcCounter;
 int velocity;
 int oldVel;
@@ -52,7 +65,11 @@ int oldY;
 int shot;
 bool shotFlag;
 bool trigger;
+bool button1;
+bool button2;
+bool button3;
 bool oldTrigger;
+bool autonomousFlag = false;
 char inData[80];
 byte index = 0;
 bool idleFlag = true;
@@ -72,56 +89,57 @@ Servo servoX, servoY;
 void setup() {
 	pinMode(testPin, OUTPUT);
 	pinMode(ddPin, OUTPUT);
+	pinMode(xPin, OUTPUT);
+	pinMode(yPin, OUTPUT);
 	pinMode(53, OUTPUT);
 	pinMode(51, OUTPUT);
 	pinMode(49, OUTPUT);
 	pinMode(47, OUTPUT);
 	pinMode(laserPin, OUTPUT);
-	servoX.attach(xPin, 1500,1600);
-	servoY.attach(yPin, 1500,1600);
+	servoX.attach(xPin, 1500, 1600);
+	servoY.attach(yPin, 1500, 1600);
 	wakeUp();  //Wake up our roomba bot
 
-	
+
 	//FunctionPointer testFunc = &test;  //GRACE: Declare each task this way
 	//queueMaker(testFunc, 0);  //GRACE: Put tasks in queue like this.  The int is for it's order.
 
 	//task queue:
 	FunctionPointer btle = &btListen;
 	queueMaker(btle, 0);
-	FunctionPointer getDriving = &driving;
-	queueMaker(getDriving, 1);
 	FunctionPointer servos = &servoing;
-	queueMaker(servos, 2);
+	queueMaker(servos, 1);
 	FunctionPointer lasering = &laser;
-	queueMaker(lasering, 3);
+	queueMaker(lasering, 2);
 	FunctionPointer gettingShot = &lightSensor;
-	queueMaker(gettingShot, 4);
+	queueMaker(gettingShot, 3);
 	FunctionPointer riverChecking = &river;
-	queueMaker(riverChecking, 5);
+	queueMaker(riverChecking, 4);
 	
-	timerMaker();
+
 
 	Serial.begin(19200); //console
 	Serial1.begin(19200);  //roomba
 	Serial2.begin(19200); //bluetooth
-	Serial1.write(128); //start the roomba
-	Serial1.write(132); //full mode
-	Serial1.write(141);
-	Serial1.write(2);
+	startFull();
+	timerMaker();
+	stopDrive();
+	//playSound(3);
+	//motorSquareTest();
 	//idler();
 }
 
-int queueMaker(FunctionPointer func, int offset){
+int queueMaker(FunctionPointer func, int offset) {
 	funcs[offset] = func;
 }
 
-int test(){  //Just a testing function to call for debbugging
+int test() { //Just a testing function to call for debbugging
 	digitalWrite(testPin, digitalRead(testPin) ^ 1);
 }
 
-void idler(){
-	
-	while (1){
+void idler() {
+
+	while (1) {
 		digitalWrite(53, digitalRead(53) ^ 1);
 	}
 
@@ -135,7 +153,7 @@ void timerMaker() {
 	TCCR0B |= (1 << WGM02);
 	TCCR0B |= (1 << CS02) | (1 << CS00);
 	TIMSK0 |= (1 << OCIE0A);
-	
+
 	TCCR5A = 0;
 	TCCR5B = 0;
 	TCNT5  = 0;
@@ -144,7 +162,7 @@ void timerMaker() {
 
 }
 
- void btListen(){
+void btListen() {
 	digitalWrite(51, digitalRead(51) ^ 1);
 	static boolean recvInProgress = false;
 	static byte ndx = 0;
@@ -154,7 +172,6 @@ void timerMaker() {
 
 	while (Serial2.available() > 0 && newData == false) {
 		rc = Serial2.read();
-		//Serial.print(rc);
 		if (recvInProgress == true) {
 			if (rc != endMarker) {
 				receivedChars[ndx] = rc;
@@ -175,22 +192,21 @@ void timerMaker() {
 			recvInProgress = true;
 		}
 	}
-	//Serial.println();
-
 	if (newData == true) {
 		strcpy(tempChars, receivedChars);
 		parseData();
-
+		showParsedData();
 		newData = false;
 	}
-			showParsedData();
+
 	digitalWrite(51, digitalRead(51) ^ 1);
+
 }
 
 
 void parseData() {
 	char * strtokIndx;
-	strtokIndx = strtok(tempChars,",");
+	strtokIndx = strtok(tempChars, ",");
 	xVal = atoi(strtokIndx);
 	strtokIndx = strtok(NULL, ",");
 	yVal = atoi(strtokIndx);
@@ -200,6 +216,13 @@ void parseData() {
 	velocity = atoi(strtokIndx);
 	strtokIndx = strtok(NULL, ",");
 	radius = atoi(strtokIndx);
+	strtokIndx = strtok(NULL, ",");
+	button1 = atoi(strtokIndx);
+	strtokIndx = strtok(NULL, ",");
+	button2 = atoi(strtokIndx);
+	strtokIndx = strtok(NULL, ",");
+	button3 = atoi(strtokIndx);
+	drive(velocity, radius);
 }
 
 void showParsedData() {
@@ -215,45 +238,45 @@ void showParsedData() {
 	Serial.println(radius);
 }
 
-void driving(){
-			//driveTimer = 0;  //uncomment for testing
-	if (driveTimer < 1200){
+void drive(int vel, int rad) {
+	driveTimer = 0;  //uncomment for testing
+	if (driveTimer < 1200) {
 		clamp(velocity, -500, 500);
 		clamp(radius, -2000, 2000);
-		if (oldVel != velocity || oldRad != radius){
-			oldVel = velocity;
-			oldRad = radius;
-			Serial1.write(137);
-			Serial1.write(velocity >> 8);
-			Serial1.write(velocity);
-			Serial1.write(radius >> 8);
-			Serial1.write(radius);
+    if (oldVel != velocity || oldRad != radius){
+	    oldVel = velocity;
+        oldRad = radius;
+		Serial1.write(137);
+		Serial1.write(vel >> 8);
+		Serial1.write(vel);
+		Serial1.write(rad >> 8);
+		Serial1.write(rad);
 		}
-			}
+	}
 	if (driveTimer >= 1200 && driveTimer < 2384) {
 		stopDrive();
 	}
-	if (driveTimer >=2384){
+	if (driveTimer >= 2384) {
 		driveTimer = 0;
 	}
 }
 
-void servoing(){
+void servoing() {
 	digitalWrite(47, digitalRead(47) ^ 1);
-	if (oldX != xVal){
+	//if (oldX != xVal) {
 		servoX.write(xVal);
-	}
-	if (oldY != yVal){
+	//}
+	//if (oldY != yVal) {
 		servoY.write(yVal);
-	}
+	//}
 	digitalWrite(47, digitalRead(47) ^ 1);
 }
 
-void lightSensor(){
+void lightSensor() {
 	photoVal = analogRead(photoSensor);
-	if (photoVal > photoThreshold){
-		if (shot > 40){
-			while(1){ //We're dead!!
+	if (photoVal > photoThreshold) {
+		if (shot > 40) {
+			while (1) { //We're dead!!
 				noInterrupts();
 			}
 			} else {
@@ -264,14 +287,14 @@ void lightSensor(){
 	}
 }
 
-void river(){
+void river() {
 	Serial1.write(142);
 	Serial1.write(13);
-	while(Serial1.available() > 0){
+	while (Serial1.available() > 0) {
 		riverFlag = Serial1.read();
 	}
-	while(riverFlag){
-		noInterrupts();  //We're dead!!
+	if(riverFlag){
+		escape();
 	}
 }
 
@@ -283,7 +306,7 @@ void wakeUp (void)
 	delay(500);
 	digitalWrite(ddPin, HIGH);
 	delay(2000);
-	for(int i = 0; i < 3;i++){
+	for (int i = 0; i < 3; i++) {
 		digitalWrite(ddPin, LOW);
 		delay(50);
 		digitalWrite(ddPin, HIGH);
@@ -300,15 +323,43 @@ void stopDrive(void)
 	Serial1.write(0);
 }
 
-void laser(){
-	if(laserTimer < 200 && trigger){
+void startFull()
+{
+	Serial1.write(128);  
+	Serial1.write(132); 
+	delay(1000);
+}
+
+void laser() {
+	if (laserTimer < 200 && trigger) {
 		digitalWrite(laserPin, HIGH);
 		} else {
 		digitalWrite(laserPin, LOW);
 	}
 }
 
-void champions(){
+void playSound (int num)
+{
+	switch (num)
+	{
+		case 1:
+		Serial1.write("\x8c\x01\x04\x42\x20\x3e\x20\x42\x20\x3e\x20");
+		Serial1.write("\x8d\x01");
+		break;
+
+		case 2:
+		Serial1.write("\x8c\x01\x01\x3c\x20");
+		Serial1.write("\x8d\x01");
+		break;
+
+		case 3:
+		Serial1.write("\x8c\x01\x01\x48\x20");
+		Serial1.write("\x8d\x01");
+		break;
+	}
+}
+
+void champions() {
 	Serial1.write(140);
 	Serial1.write(2);
 	Serial1.write(8);
@@ -328,14 +379,13 @@ void champions(){
 	Serial1.write(32);
 	Serial1.write(78);
 	Serial1.write(100);
-	
+
 }
 
 
 ISR(TIMER0_COMPA_vect)          // Fires off a task each time our period comes up.  I need to fix this crap
 
 {
-	test();
 	(*funcs[funcCounter])();
 	funcCounter++;
 	if (funcCounter == maxFuncs)
@@ -344,11 +394,12 @@ ISR(TIMER0_COMPA_vect)          // Fires off a task each time our period comes u
 
 ISR(TIMER5_OVF_vect)        // Timer for counting off the laser and the 30 second freeze
 {
+	clockTimer++;
 	driveTimer++;
-	if (trigger){
+	if (trigger) {
 		laserTimer++;
 	}
-	if (shotFlag){
+	if (shotFlag) {
 		shot++;
 	}
 	TCNT5 = 259000;
@@ -361,3 +412,49 @@ int main(void) {
 	{
 	}
 }
+
+void clockT(int delayTime){
+	int dividedTimer = (delayTime/50.33) + clockTimer;
+	test();
+	while(clockTimer < dividedTimer){
+		Serial.println(clockTimer);
+	}
+	test();
+}
+
+void escape(){
+	autonomousFlag = true;
+	stopDrive();
+	drive(-200, 0);
+	playSound(3);
+	clockT(1000);
+	autonomousFlag = true;
+}
+
+// void motorSquareTest(void)
+// {
+// 	drive (100, 0);
+// 	clockT(2000);
+// 	stopDrive();
+// 	drive (60, 1);
+// 	clockT(4000);
+// 	drive (100, 0);
+// 	clockT(2000);
+// 	stopDrive();
+// 	drive (60, 1);
+// 	clockT(4000);
+// 	drive (100, 0);
+// 	clockT(2000);
+// 	stopDrive();
+// 	drive (60, 1);
+// 	clockT(4000);
+// 	drive (100, 0);
+// 	clockT(2000);
+// 	stopDrive();
+// 	drive (60, 1);
+// 	clockT(4000);
+// 	stopDrive();
+// }
+
+
+

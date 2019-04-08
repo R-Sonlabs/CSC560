@@ -25,7 +25,6 @@ void Scheduler_Init();
  * Go through the task list and run any tasks that need to be run.  The main function should simply be this
  * function called as often as possible, plus any low-priority code that you want to run sporadically.
  */
-uint32_t Scheduler_Dispatch();
 
 
 /************************************************************************/
@@ -33,74 +32,8 @@ uint32_t Scheduler_Dispatch();
  * Use template type to make a generic function LinkedList */
 /************************************************************************/
 
-
-template <class t> 
-class LinkedList
-{
-	public:
-		//Constructor
-		LinkedList ()
-		{
-			head = NULL;
-			tail = NULL;
-			size = 0;
-		}
-		struct node
-		{
-			t val;
-			node* next;
-			node* prev;
-			node(int v_) : val(v_), next(NULL) {};
-		};
-		
-		t* front()
-		{
-			return &(head->val);
-		}
-
-		void addFront(t v_)
-		{
-			struct node* temp = (struct node*) malloc(sizeof(struct node)); 
-			temp->val = v_;
-			temp->next = head;
-			head = temp;
-			
-		}
-		void removeFront()
-		{
-			//struct Node* temp = *head_ref, *prev;
-			node* temp = head;
-			head = head->next;		
-			free(temp);  // Free memory		
-		}
-		
-		bool isEmpty()
-		{
-			return size == 0;
-			
-		}
-		int length()
-		{
-			return size;
-		}
-		// Destructor
-		~LinkedList(){
-			
-		}
-		private:
-		node* head;
-		node* tail;
-		int size;
-			
-};
-
-struct task_arg{
-	uint8_t pin;
-	char port;	
-};
-
 //A task callback function
-typedef void (*task_cb)(LinkedList<task_arg>&);
+typedef void (*task_cb)(void* ptr);
 
 
 /**
@@ -115,9 +48,9 @@ typedef void (*task_cb)(LinkedList<task_arg>&);
  * \param period The task will repeat every "period" milliseconds.
  * \param task The callback function that the scheduler is to call.
  */
-void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task, LinkedList<task_arg> argument);
-
-void Scheduler_StartTask_Oneshot(task_cb task_oneshot, LinkedList<task_arg> argument, int priority, int32_t run_time, int32_t remaining_time);
-void Scheduler_Dispatch_Oneshot();
+void Scheduler_StartTask(int16_t delay, int16_t period, task_cb task, void* argument);
+uint32_t Scheduler_Dispatch();
+void Scheduler_StartTask_Oneshot(int32_t remaining_time, int32_t run_time, task_cb task, void* argument, int priority);
+void Scheduler_Dispatch_Oneshot(uint32_t idle_time);
 
 #endif /* SCHEDULER_H_ */

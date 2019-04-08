@@ -35,198 +35,179 @@
 #define TICKS_PER_SECOND 16000000L
 volatile unsigned long system_timer = 0;
 
-#define Disable_Interrupt()		asm volatile ("cli"::)
-#define Enable_Interrupt()		asm volatile ("sei"::)
-LinkedList <task_arg> arg1;
-LinkedList <task_arg> arg2;
+int test_periodic[] = {2,5};
+void* arg1 = &test_periodic;
+int test_oneS[] = {2,5};
+void* arg2 = &test_oneS;
 
-// Get timer value
-unsigned long get_system_timer( void )
+// One shot task 1 (Pin 51)
+void oneShot_task_1(void* arg)
 {
-	unsigned char sreg;
-	unsigned long i;
-	/* Save global interrupt flag */
-	sreg = SREG;
-	/* Disable interrupts */
-	cli();
-	/* Read TCNT1 into i */
-	i = system_timer;
-	/* Restore global interrupt flag */
-	SREG = sreg;
-	return i;
-}
+	//set digital pin 51
 
-//my delay function
-void delay(uint32_t ms)
-{
-	unsigned long current_time;
-	unsigned long previous_time = get_system_timer();
-	
-	for(;;){
-		current_time = get_system_timer();
-		if(current_time - previous_time >= ms){
-			break;
+	if(arg == NULL){
+		PORTB |= (1 << PB2);
+		for(int x = 0; x < 1000; x++);
+		PORTB &= ~(1 << PB2);
+	}
+	else{
+		for(int i = 0; i < *(((int*)arg)); i++){
+			PORTB |= (1 << PB2);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB2);
+			for(int x = 0; x < 500; x++);
 		}
-		sleep_enable(); // put the processor into sleep mode while waiting for the timer event
+		for(int x = 0; x < 1000; x++);
+		for(int i = 0; i < *(((int*)arg+1)); i++){
+			PORTB |= (1 << PB2);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB2);
+			for(int x = 0; x < 500; x++);
+		}
 	}
 }
 
-// One shot task 1 (Pin 2)
-void pulse_pin5_task(LinkedList<task_arg> &arg1)
-{
-	//set digital pin 2
-	PORTC |= (1 << PC2);
-	delay(10);
-	PORTC &= ~(1 << PC2);
-}
-
-// One shot task 2 (Pin 3)
-void pulse_pin6_task(LinkedList<task_arg> &arg1)
-{
-	//set digital pin 3
-	PORTC |= (1 << PC3);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
-	PORTC &= ~(1 << PC3);
-}
-
-// task 2 (Pin 4)
-void pulse_pin7_task(LinkedList<task_arg> &arg1)
-{
-	//set digital pin 4
-	PORTC |= (1 << PC4);
-	delay(10);
-	PORTC &= ~(1 << PC4);
-}
-
 // Periodic Task 1
-void periodic_task_1(LinkedList<task_arg> &arg1)
+void periodic_task_1(void* arg)
 {
-	//set digital pin 0 high
-	PORTC |= (1 << PC0);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 1, 10, 90);
-	PORTC &= ~(1 << PC0);
+	//set digital pin 52 high
+	if (arg == NULL)
+	{
+		PORTB |= (1 << PB1);
+		for(int x = 0; x < 3000; x++);
+		PORTB &= ~(1 << PB1);
+	}
+	else{
+		for(int i = 0; i < *(((int*)arg)); i++){
+			PORTB |= (1 << PB1);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB1);
+			for(int x = 0; x < 500; x++);
+		}
+		for(int x = 0; x < 1000; x++);
+		for(int i = 0; i < *(((int*)arg+1)); i++){
+			PORTB |= (1 << PB1);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB1);
+			for(int x = 0; x < 500; x++);
+		}
+	}
 }
 
 // Periodic Task 2
-void periodic_task_2(LinkedList<task_arg> &arg1)
+void periodic_task_2(void* arg)
 {
-	//set digital pin 1 high, and then 1 low
-	PORTC |= (1 << PC1);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 1, 10, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 10, 30);
-	PORTC &= ~(1 << PC1);
+	//set digital pin 53 high
+	if (arg == NULL)
+	{
+		PORTB |= (1 << PB0);
+		for(int x = 0; x < 3000; x++);
+		PORTB &= ~(1 << PB0);
+	}
+	else{
+		for(int i = 0; i < *(((int*)arg)); i++){
+			PORTB |= (1 << PB0);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB0);
+			for(int x = 0; x < 500; x++);
+		}
+		for(int x = 0; x < 1000; x++);
+		for(int i = 0; i < *(((int*)arg+1)); i++){
+			PORTB |= (1 << PB0);
+			for(int x = 0; x < 500; x++);
+			PORTB &= ~(1 << PB0);
+			for(int x = 0; x < 500; x++);
+		}
+	}
 }
 
 // Periodic Task 3
-void periodic_task_3(LinkedList<task_arg> &arg1)
+void periodic_task_3(void* arg)
 {
-	//set digital pin 0 high
-	PORTC |= (1 << PC0);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 10, 90);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 15, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 15, 90);
-	PORTC &= ~(1 << PC0);
+	//set digital pin 51 high
+	PORTB |= (1 << PB2);
+	for(int x = 0; x < 1000; x++);
+	PORTB &= ~(1 << PB2);
+	Scheduler_StartTask(10, 30, periodic_task_1, NULL);
 }
-
-// Periodic Task 4
-void periodic_task_4(LinkedList<task_arg> &arg1)
-{
-	//set digital pin 0 high
-	PORTC |= (1 << PC0);
-	Scheduler_StartTask_Oneshot(pulse_pin5_task, arg2, 0, 10, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 0, 20, 70);
-	Scheduler_StartTask_Oneshot(pulse_pin6_task, arg2, 1, 60, 90);
-	PORTC &= ~(1 << PC0);
-}
-
 
 // idle task (PC7)
 void idle(uint32_t idle_period)
 {
-	// this function can perform some low-priority task while the scheduler has nothing to run.
-	// It should return before the idle period (measured in ms) has expired.  For example, it
-	// could sleep or respond to I/O.
-	
-	// example idle function that just pulses a pin.
-	PORTC |= (1 << PC7);
-	delay(idle_period);
-	Scheduler_Dispatch_Oneshot();
-	PORTC &= ~(1 << PC7);
+	PORTB |= (1 << PB3);
+	//for(int x = 0; x < 1000; x++);
+	Scheduler_Dispatch_Oneshot(idle_period);
+	PORTB &= ~(1 << PB3);
 }
 
+void success(){
+	Scheduler_StartTask(0, 20, periodic_task_1, NULL);
+	Scheduler_StartTask(15, 30, periodic_task_2, NULL);
+	Scheduler_StartTask(20, 40, periodic_task_2, arg1);
+	Scheduler_StartTask_Oneshot(10, 10, oneShot_task_1, NULL,0);
+	Scheduler_StartTask_Oneshot(10, 2, oneShot_task_1, arg2,0);
+}
+void taskCollide(){
+	Scheduler_StartTask(0, 20, periodic_task_1, NULL);
+	Scheduler_StartTask(0, 20, periodic_task_2, NULL);
+}
+void time_con(){
+	Scheduler_StartTask(20, 40, periodic_task_2, NULL);
+	Scheduler_StartTask_Oneshot(40, 30, oneShot_task_1, NULL,0);
+}
+void too_many_OTask(){
+	Scheduler_StartTask(0, 10, periodic_task_1, NULL);
+	Scheduler_StartTask(15, 10, periodic_task_2, NULL);
+	Scheduler_StartTask_Oneshot(10, 10, oneShot_task_1, NULL,0);
+	Scheduler_StartTask_Oneshot(30, 5, oneShot_task_1, arg2,0);
+}
+
+void isrTooLong(){
+	Scheduler_StartTask(5, 20, periodic_task_1, NULL);
+	Scheduler_StartTask(15, 30, periodic_task_2, NULL);
+	Scheduler_StartTask_Oneshot(30, 5, oneShot_task_1, arg2,0);
+	Scheduler_StartTask_Oneshot(700, 10, oneShot_task_1, NULL,0);
+}
 void setup()
 {
-	//PC0: digital pin 37, PC1: digital pin 36
-	//PC2: digital pin 35, PC3: digital pin 34
-	//PC4: digital pin 33, PC5: Digital pin 32
-	//PC7: digital pin 30
-	DDRC |= (1 << PC7) | (1 << PC5) | (1 << PC4) | (1 << PC3) | (1 << PC2) | (1 << PC1) | (1 << PC0);
-	
-	/*-----Apply Timer Interrupt------*/
-	Disable_Interrupt();
-	TCCR1A = 0; // set entire TCCR1A register to 0
-	TCCR1B = 0; // same for TCCR1B
-	TCNT1  = 0; // initialize counter value to 0
-	// set compare match register for 100 Hz increments
-	OCR1A = 16000000 / (8 * 1000);
-	// turn on CTC mode
-	TCCR1B |= (1 << WGM12);
-	// Set CS12, CS11 and CS10 bits for 8 prescaler
-	TCCR1B |= (0 << CS12) | (1 << CS11) | (0 << CS10);
-	// enable timer compare interrupt
-	TIMSK1 |= (1 << OCIE1A);
+	//PB0: 53
+	//PB1: digital pin 52
+	//PB2: digital pin 51
+	//PB3: digital pin 50
 	Scheduler_Init();
-	Enable_Interrupt();
-	/* Add Test Case Here!
-	 * check time conflict between Non-time Critical task and Time Triggered task
-	 * two time based tasks collide repeatedly
-	 * too many one-shot tasks cause the time-based tasks to miss their deadlines
-	*/
-	//Success
-	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
-	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
+	Scheduler_StartTask(0, 20, periodic_task_1, NULL);
+	Scheduler_StartTask(15, 30, periodic_task_2, NULL);
+	//-- Success --
+	//success();
+
+	//-- Time conflict between oneshot tasks and periodic task --
+	//time_con();
 	
-	//Time conflict between oneshot tasks and periodic task
-	Scheduler_StartTask(0, 300, periodic_task_1, arg1);
-	Scheduler_StartTask(0, 300, pulse_pin7_task, arg1);
-	
-	// Two periodic tasks collide repeatedly
-	Scheduler_StartTask(0, 200, pulse_pin6_task, arg1);
-	Scheduler_StartTask(0, 300, pulse_pin7_task, arg1);
-	
-	//Too much oneshot tasks, miss deadline
-	Scheduler_StartTask(0, 200, periodic_task_3, arg1);
-	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
-	
-	//Interrupt handler executing too long, miss deadline
-	Scheduler_StartTask(0, 200, periodic_task_4, arg1);
-	Scheduler_StartTask(50, 300, pulse_pin7_task, arg1);
+	//-- Two periodic tasks collide repeatedly --
+	//taskCollide();
+
+	//-- Too much oneshot tasks, miss deadline --
+	//too_many_OTask();
+
+	//-- Interrupt handler executing too long, miss deadline --
+	//isrTooLong();
 }
 
-void loop()
-{
-	uint32_t idle_period = Scheduler_Dispatch();
-	if (idle_period)
-	{
-		idle(idle_period);
-	}
-}
 
 
 int main(void)
 {
-	task_arg pin_port{3,'D'};
-	arg2.addFront(pin_port);
-	DDRC = 0xFF;
-	PORTC = 0X00;
+	DDRB = 0xFF;
+	DDRA |= (1<<PA0);
+	PORTA &= ~(1 << PA0);
     setup();
     for (;;)
     {
-	    loop();
+	    uint32_t idle_period = Scheduler_Dispatch();
+	    if (idle_period)
+	    {
+		    idle(idle_period);
+	    }
     }
     for (;;);
     return 0;

@@ -127,23 +127,24 @@ uint32_t Scheduler_Dispatch()
 //---Oneshot tasks--- 
 void Scheduler_StartTask_Oneshot(int32_t remaining_time, int32_t run_time, task_cb task, void* argument, int priority)
 {
-	static uint8_t id = 0;
-	while (id < MAXTASKS && !oneS_tasks[id].is_running)
-	{
-		oneS_tasks[id].remaining_time = remaining_time;
-		oneS_tasks[id].run_time = run_time;
-		oneS_tasks[id].is_running = 1;
-		oneS_tasks[id].callback = task;
-		oneS_tasks[id].argument = argument;
-		oneS_tasks[id].priority = priority;
-		id++;
+	uint8_t id = 0;
+	while (id < MAXTASKS) {
+		if(!oneS_tasks[id].is_running){
+			oneS_tasks[id].remaining_time = remaining_time;
+			oneS_tasks[id].run_time = run_time;
+			oneS_tasks[id].is_running = 1;
+			oneS_tasks[id].callback = task;
+			oneS_tasks[id].argument = argument;
+			oneS_tasks[id].priority = priority;
+			id++;
+	}
+	break;
 	}
 }
 
 void Scheduler_Dispatch_Oneshot(uint32_t idle_time)
 {	
 	uint8_t i;
-	int index = -1;
 	uint32_t now = ms;
 	uint32_t elapsed = now - last_oneshot_time;
 	last_oneshot_time = now;
@@ -157,11 +158,7 @@ void Scheduler_Dispatch_Oneshot(uint32_t idle_time)
 			// update the task's remaining time
 			oneS_tasks[i].remaining_time -= elapsed;
 			if (oneS_tasks[i].remaining_time <= 0 && idle_time >= oneS_tasks[i].run_time && t==NULL)
-			{
-				index = i;
-				//t = oneS_tasks[i].callback;
-				//argument = oneS_tasks[i].argument;
-				//oneS_tasks[i].is_running = 0;
+			{			
 				if(oneS_tasks[i].priority == 1){
 					//Disable_Interrupt();
 					//t(argument);
@@ -173,6 +170,7 @@ void Scheduler_Dispatch_Oneshot(uint32_t idle_time)
 					argument = oneS_tasks[i].argument;
 					
 				}
+				oneS_tasks[i].is_running = 0;
 			}
 		}
 	}

@@ -92,6 +92,8 @@ void periodic_task_1(void* arg)
 			for(int x = 0; x < 500; x++);
 		}
 	}
+	Scheduler_StartTask_Oneshot(15, 15, oneShot_task_1, arg2,1);
+	//Scheduler_StartTask_Oneshot(15, 2, oneShot_task_1, NULL,0);
 }
 
 // Periodic Task 2
@@ -143,9 +145,7 @@ void idle(uint32_t idle_period)
 void success(){
 	Scheduler_StartTask(0, 20, periodic_task_1, NULL);
 	Scheduler_StartTask(15, 30, periodic_task_2, NULL);
-	Scheduler_StartTask(20, 40, periodic_task_2, arg1);
-	Scheduler_StartTask_Oneshot(15, 15, oneShot_task_1, NULL,1);
-	Scheduler_StartTask_Oneshot(15, 2, oneShot_task_1, NULL,0);
+	Scheduler_StartTask(20, 40, periodic_task_2, arg1);	
 }
 void taskCollide(){
 	Scheduler_StartTask(0, 20, periodic_task_1, NULL);

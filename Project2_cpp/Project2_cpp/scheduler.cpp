@@ -159,9 +159,20 @@ void Scheduler_Dispatch_Oneshot(uint32_t idle_time)
 			if (oneS_tasks[i].remaining_time <= 0 && idle_time >= oneS_tasks[i].run_time && t==NULL)
 			{
 				index = i;
-				t = oneS_tasks[i].callback;
-				argument = oneS_tasks[i].argument;
+				//t = oneS_tasks[i].callback;
+				//argument = oneS_tasks[i].argument;
 				//oneS_tasks[i].is_running = 0;
+				if(oneS_tasks[i].priority == 1){
+					//Disable_Interrupt();
+					//t(argument);
+					t = oneS_tasks[0].callback;
+					argument = oneS_tasks[0].argument;				
+					//Enable_Interrupt();
+				}else{
+					t = oneS_tasks[i].callback;
+					argument = oneS_tasks[i].argument;
+					
+				}
 			}
 		}
 	}

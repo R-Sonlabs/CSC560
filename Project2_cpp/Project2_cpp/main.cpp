@@ -66,6 +66,31 @@ void oneShot_task_1(void* arg)
 		}
 	}
 }
+void oneShot_task_2(void* arg)
+{
+	//set digital pin 23
+	if(arg == NULL){
+		PORTA |= (1 << PA1);
+		for(int x = 0; x < 1000; x++);
+		PORTA &= ~(1 << PA1);
+	}
+	else{
+		for(int i = 0; i < *(((int*)arg)); i++){
+			PORTA |= (1 << PA1);
+			for(int x = 0; x < 500; x++);
+			PORTA &= ~(1 << PA1);
+			for(int x = 0; x < 500; x++);
+		}
+		for(int x = 0; x < 1000; x++);
+		for(int i = 0; i < *(((int*)arg+1)); i++){
+			PORTA |= (1 << PA1);
+			for(int x = 0; x < 500; x++);
+			PORTA &= ~(1 << PA1);
+			for(int x = 0; x < 500; x++);
+		}
+	}
+}
+
 
 // Periodic Task 1
 void periodic_task_1(void* arg)
@@ -92,8 +117,8 @@ void periodic_task_1(void* arg)
 			for(int x = 0; x < 500; x++);
 		}
 	}
-	Scheduler_StartTask_Oneshot(15, 15, oneShot_task_1, arg2,1);
-	//Scheduler_StartTask_Oneshot(15, 2, oneShot_task_1, NULL,0);
+	Scheduler_StartTask_Oneshot(10, 5, oneShot_task_1, arg2,1);
+	Scheduler_StartTask_Oneshot(10, 2, oneShot_task_1, NULL,0);
 }
 
 // Periodic Task 2
@@ -121,6 +146,8 @@ void periodic_task_2(void* arg)
 			for(int x = 0; x < 500; x++);
 		}
 	}
+	Scheduler_StartTask_Oneshot(15, 5, oneShot_task_2, NULL,0);
+	Scheduler_StartTask_Oneshot(10, 2, oneShot_task_2, arg2,0);
 }
 
 // Periodic Task 3
@@ -156,10 +183,8 @@ void time_con(){
 	Scheduler_StartTask_Oneshot(40, 30, oneShot_task_1, NULL,0);
 }
 void too_many_OTask(){
-	Scheduler_StartTask(0, 10, periodic_task_1, NULL);
-	Scheduler_StartTask(15, 10, periodic_task_2, NULL);
-	Scheduler_StartTask_Oneshot(10, 10, oneShot_task_1, NULL,0);
-	Scheduler_StartTask_Oneshot(30, 5, oneShot_task_1, arg2,0);
+	Scheduler_StartTask(0, 20, periodic_task_1, NULL);
+	Scheduler_StartTask(15, 30, periodic_task_2, NULL);
 }
 
 void isrTooLong(){
@@ -178,7 +203,7 @@ void setup()
 	//Scheduler_StartTask(0, 20, periodic_task_1, NULL);
 	//Scheduler_StartTask(15, 30, periodic_task_2, NULL);
 	//-- Success --
-	success();
+	//success();
 
 	//-- Time conflict between oneshot tasks and periodic task --
 	//time_con();
@@ -190,7 +215,7 @@ void setup()
 	//too_many_OTask();
 
 	//-- Interrupt handler executing too long, miss deadline --
-	//isrTooLong();
+	isrTooLong();
 }
 
 
@@ -198,7 +223,8 @@ void setup()
 int main(void)
 {
 	DDRB = 0xFF;
-	DDRA |= (1<<PA0);
+	DDRL = 0xFF;
+	DDRA |= (1<<PA0) | (1<<PA1);
 	PORTA &= ~(1 << PA0);
     setup();
     for (;;)
